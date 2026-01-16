@@ -393,3 +393,17 @@ cp /var/lib/redis/dump.rdb /backup/
 
 ## 许可证
 MIT License - 详见 LICENSE 文件
+
+
+
+
+
+npm install mongodb
+
+mongodb+srv://yy991852:yy6771464@yy991852.9eqdmn7.mongodb.net/?appName=yy991852
+
+Vercel+MongoDB
+
+# 在Vercel项目中设置
+MONGODB_URI=你的连接字符串
+NODE_ENV=production
