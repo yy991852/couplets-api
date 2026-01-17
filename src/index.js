@@ -9,6 +9,9 @@ const dotenv = require('dotenv');
 // 加载环境变量
 dotenv.config();
 
+// 1. 导入数据库连接实例（新增）
+const database = require('../config/db');
+
 // 导入路由
 const coupletsRouter = require('../api/couplets');
 const categoriesRouter = require('../api/categories');
@@ -44,11 +47,33 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+// 2. 核心：初始化数据库连接（新增）
+// 适配Vercel Serverless：避免冷启动重复连接
+const initDB = async () => {
+  if (!database.isConnected) {
+    try {
+      await database.connect();
+      console.log('📌 数据库首次连接成功');
+    } catch (err) {
+      console.error('📌 数据库连接失败:', err.message);
+    }
+  }
+};
+
+// 3. 所有请求前先确保数据库连接（新增中间件）
+app.use(async (req, res, next) => {
+  await initDB();
+  next();
+});
+
 // 根路径响应
 app.get('/', (req, res) => {
+  // 新增：返回数据库连接状态
+  const dbStatus = database.getStatus();
   res.json({
     message: '对联API服务已启动',
     version: '1.0.0',
+    dbConnection: dbStatus, // 显示数据库连接状态
     endpoints: {
       couplets: '/api/couplets',
       categories: '/api/categories',
@@ -59,10 +84,12 @@ app.get('/', (req, res) => {
   });
 });
 
-// 健康检查端点
+// 健康检查端点（增强：包含数据库状态）
 app.get('/health', (req, res) => {
+  const dbStatus = database.getStatus();
   res.status(200).json({
-    status: 'healthy',
+    status: dbStatus.isConnected ? 'healthy' : 'unhealthy',
+    database: dbStatus,
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     memory: process.memoryUsage()
@@ -104,9 +131,12 @@ module.exports = app;
 
 // 本地开发时启动服务器
 if (require.main === module) {
-  app.listen(PORT, () => {
-    console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-    console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
+  // 本地启动时主动连接数据库
+  initDB().then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+      console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
+    });
   });
 }

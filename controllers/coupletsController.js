@@ -1,37 +1,4 @@
-// const { coupletDB } = require('../models/Couplet');
-
-// // 获取所有对联
-// exports.getAllCouplets = (req, res) => {
-//   try {
-//     const { 
-//       page = 1, 
-//       limit = 10, 
-//       recommended, 
-//       category 
-//     } = req.query;
-    
-//     const options = {
-//       page: parseInt(page),
-//       limit: parseInt(limit),
-//       recommended: recommended === 'true' ? true : (recommended === 'false' ? false : undefined),
-//       category: category || undefined
-//     };
-    
-//     const result = coupletDB.getAllCouplets(options);
-    
-//     res.status(200).json({
-//       success: true,
-//       data: result.data,
-//       pagination: result.pagination
-//     });
-//   } catch (error) {
-//     console.error('获取对联列表错误:', error);
-//     res.status(500).json({
-//       success: false,
-//       error: '服务器内部错误'
-//     });
-//   }
-// };
+ 
 
 const coupletDB = require('../models/CoupletAdapter'); // 改为适配器
 
