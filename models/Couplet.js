@@ -66,14 +66,22 @@ class CoupletDatabase {
   }
 
   // 初始化模拟数据
-  initializeMockData() {
-    const mockData = require('../../../database/couplets_data.json');
-    
-    mockData.couplets.forEach(coupletData => {
-      const couplet = new Couplet(coupletData.id, coupletData);
-      this.couplets.set(coupletData.id, couplet);
-    });
-  }
+// 修改 Couplet.js 中的 initializeMockData 方法
+initializeMockData() {
+  // 方案A: 如果数据文件在根目录的 database 文件夹中
+  const mockData = require('../database/couplets_data.json');
+  
+  // 或者方案B: 如果数据文件在 models 同级目录
+  // const mockData = require('./couplets_data.json');
+  
+  // 或者方案C: 如果数据文件在根目录
+  // const mockData = require('../../database/couplets_data.json');
+  
+  mockData.couplets.forEach(coupletData => {
+    const couplet = new Couplet(coupletData.id, coupletData);
+    this.couplets.set(coupletData.id, couplet);
+  });
+}
 
   // 获取所有对联
   getAllCouplets(options = {}) {
