@@ -12,9 +12,8 @@
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "/src/$1.js"
+      "src": "/(.*)",  // 匹配所有请求路径
+      "dest": "/src/index.js"  // 全部转发到Express入口文件
     }
   ]
- 
 }
