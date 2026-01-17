@@ -15,9 +15,6 @@
       "src": "/api/(.*)",
       "dest": "/src/$1.js"
     }
-  ],
-  "includeFiles": [
-    "models/**/*",
-    "database/**/*"
   ]
+ 
 }
