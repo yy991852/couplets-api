@@ -1,8 +1,9 @@
 {
+  "version": 2,
   "framework": null,
   "installCommand": "npm install",
   "buildCommand": "echo 'No build step required'",
-  "outputDirectory": ".", 
+  "outputDirectory": ".",
   "builds": [
     {
       "src": "src/index.js",
@@ -11,8 +12,12 @@
   ],
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "src/index.js"
+      "src": "/api/(.*)",
+      "dest": "/src/$1.js"
     }
+  ],
+  "includeFiles": [
+    "models/**/*",
+    "database/**/*"
   ]
 }

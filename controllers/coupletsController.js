@@ -1,38 +1,56 @@
-const { coupletDB } = require('../models/Couplet');
+// const { coupletDB } = require('../models/Couplet');
 
-// 获取所有对联
-exports.getAllCouplets = (req, res) => {
-  try {
-    const { 
-      page = 1, 
-      limit = 10, 
-      recommended, 
-      category 
-    } = req.query;
+// // 获取所有对联
+// exports.getAllCouplets = (req, res) => {
+//   try {
+//     const { 
+//       page = 1, 
+//       limit = 10, 
+//       recommended, 
+//       category 
+//     } = req.query;
     
+//     const options = {
+//       page: parseInt(page),
+//       limit: parseInt(limit),
+//       recommended: recommended === 'true' ? true : (recommended === 'false' ? false : undefined),
+//       category: category || undefined
+//     };
+    
+//     const result = coupletDB.getAllCouplets(options);
+    
+//     res.status(200).json({
+//       success: true,
+//       data: result.data,
+//       pagination: result.pagination
+//     });
+//   } catch (error) {
+//     console.error('获取对联列表错误:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: '服务器内部错误'
+//     });
+//   }
+// };
+
+const coupletDB = require('../models/CoupletAdapter'); // 改为适配器
+
+exports.getAllCouplets = async (req, res) => {
+  try {
     const options = {
-      page: parseInt(page),
-      limit: parseInt(limit),
-      recommended: recommended === 'true' ? true : (recommended === 'false' ? false : undefined),
-      category: category || undefined
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      category: req.query.category,
+      recommended: req.query.recommended
     };
     
-    const result = coupletDB.getAllCouplets(options);
-    
-    res.status(200).json({
-      success: true,
-      data: result.data,
-      pagination: result.pagination
-    });
+    const result = await coupletDB.getAllCouplets(options);
+    res.json(result);
   } catch (error) {
-    console.error('获取对联列表错误:', error);
-    res.status(500).json({
-      success: false,
-      error: '服务器内部错误'
-    });
+    console.error('获取对联列表失败:', error);
+    res.status(500).json({ error: '服务器错误', message: error.message });
   }
 };
-
 // 获取单个对联详情
 exports.getCoupletById = (req, res) => {
   try {
