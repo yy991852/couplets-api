@@ -15,7 +15,7 @@
     "chinese-culture",
     "wechat-miniprogram"
   ],
-  "author": "Your Name",
+  "author": "Yang Ya",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",

@@ -83,12 +83,12 @@ app.use((err, req, res, next) => {
 });
 
 // 启动服务器
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-    console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
-  });
-}
+// if (process.env.NODE_ENV !== 'test') {
+//   app.listen(PORT, () => {
+//     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+//     console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
+//     console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
+//   });
+// }
 
 module.exports = app;
