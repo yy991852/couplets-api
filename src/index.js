@@ -10,9 +10,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // 导入路由
-const coupletsRouter = require('../routes/couplets');
-const categoriesRouter = require('../routes/categories');
-const searchRouter = require('../routes/search');
+const coupletsRouter = require('../api/couplets');
+const categoriesRouter = require('../api/categories');
+const searchRouter = require('../api/search');
 
 // 创建Express应用
 const app = express();
