@@ -19,7 +19,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // 安全中间件
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false
+}));
+
 app.use(cors({
   origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
   credentials: true
@@ -31,17 +34,30 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // 日志中间件
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('combined'));
-}
+app.use(morgan('combined'));
 
 // 速率限制
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15分钟
-  max: 100, // 每个IP限制100个请求
-  message: '请求过于频繁，请稍后再试。'
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: '请求过于频繁，请15分钟后再试。' }
 });
 app.use('/api/', limiter);
+
+// 根路径响应
+app.get('/', (req, res) => {
+  res.json({
+    message: '对联API服务已启动',
+    version: '1.0.0',
+    endpoints: {
+      couplets: '/api/couplets',
+      categories: '/api/categories',
+      search: '/api/search',
+      health: '/health'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
 
 // 健康检查端点
 app.get('/health', (req, res) => {
@@ -62,7 +78,8 @@ app.use('/api/search', searchRouter);
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not Found',
-    message: `无法找到 ${req.method} ${req.url}`
+    message: `无法找到 ${req.method} ${req.url}`,
+    suggestions: ['/api/couplets', '/api/categories', '/api/search']
   });
 });
 
@@ -82,13 +99,14 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 启动服务器
-// if (process.env.NODE_ENV !== 'test') {
-//   app.listen(PORT, () => {
-//     console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
-//     console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
-//     console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
-//   });
-// }
-
+// Vercel需要导出app
 module.exports = app;
+
+// 本地开发时启动服务器
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 服务器运行在 http://localhost:${PORT}`);
+    console.log(`📚 环境: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`⏰ 时间: ${new Date().toLocaleString()}`);
+  });
+}
