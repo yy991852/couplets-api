@@ -8,76 +8,43 @@ class CoupletDatabase {
     this.initialize();
   }
 
+  // 初始化MongoDB连接
   async initialize() {
     try {
       await this.db.connect();
-      console.log('MongoDB适配器初始化完成');
+      console.log('✅ MongoDB连接成功（coupletsCt集合）');
     } catch (error) {
-      console.warn('MongoDB连接失败，将使用内存存储:', error.message);
-      this.useMemory = true;
-      this.memoryStorage = new Map();
+      console.error('❌ MongoDB连接失败:', error.message);
+      throw new Error('数据库连接失败，请检查配置');
     }
   }
 
-  async getAllCouplets(options = {}) {
-    if (this.useMemory) {
-      // 内存模式（兼容旧代码）
-      return this.memoryGetAllCouplets(options);
-    }
-    
+  // 代理调用Model方法
+  async getCategories() {
+    return await CoupletModel.getCategories();
+  }
+
+  async getAllCouplets(options) {
     return await CoupletModel.getAllCouplets(options);
   }
 
   async getCoupletById(id) {
-    if (this.useMemory) {
-      return this.memoryGetCoupletById(id);
-    }
-    
     return await CoupletModel.getCoupletById(id);
   }
 
-  async searchCouplets(query, options = {}) {
-    if (this.useMemory) {
-      return this.memorySearchCouplets(query, options);
-    }
-    
-    return await CoupletModel.searchCouplets(query, options);
-  }
-
-  async getCategories() {
-    if (this.useMemory) {
-      return this.memoryGetCategories();
-    }
-    
-    return await CoupletModel.getCategories();
-  }
-
-  async getRandomCouplets(limit = 3) {
-    if (this.useMemory) {
-      return this.memoryGetRandomCouplets(limit);
-    }
-    
+  async getRandomCouplets(limit) {
     return await CoupletModel.getRandomCouplets(limit);
   }
 
-  async updateFavoriteCount(id, increment = true) {
-    if (this.useMemory) {
-      return this.memoryUpdateFavoriteCount(id, increment);
-    }
-    
+  async updateFavoriteCount(id, increment) {
     return await CoupletModel.updateFavoriteCount(id, increment);
   }
 
-  // 内存存储方法（兼容模式）
-  memoryGetAllCouplets(options = {}) {
-    let results = Array.from(this.memoryStorage.values());
-    
-    // ... 实现你的内存存储逻辑 ...
+  async searchCouplets(query, options) {
+    return await CoupletModel.searchCouplets(query, options);
   }
-  
-  // ... 其他内存存储方法的实现 ...
 }
 
-// 导出实例
+// 导出单例
 const coupletDB = new CoupletDatabase();
 module.exports = coupletDB;

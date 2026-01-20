@@ -1,146 +1,136 @@
-const { coupletDB } = require('../models/Couplet');
+// controllers/categoriesController.js
+const coupletDB = require('../models/CoupletAdapter');
 
-// 获取所有分类
-exports.getAllCategories = (req, res) => {
+// 1. 获取所有分类
+exports.getAllCategories = async (req, res) => {
   try {
-    const categories = coupletDB.getCategories();
-    
+    const categories = await coupletDB.getCategories();
     res.status(200).json({
       success: true,
       data: categories
     });
   } catch (error) {
-    console.error('获取分类列表错误:', error);
+    console.error('获取分类列表失败:', error);
     res.status(500).json({
       success: false,
-      error: '服务器内部错误'
+      error: '服务器内部错误',
+      message: error.message
     });
   }
 };
 
-// 获取单个分类详情
-exports.getCategoryById = (req, res) => {
+// 2. 获取分类详情（含该分类下的对联）
+exports.getCategoryById = async (req, res) => {
   try {
     const { id } = req.params;
-    
-    if (!id) {
+    const { page = 1, limit = 10 } = req.query;
+    if (!id || isNaN(parseInt(id))) {
       return res.status(400).json({
         success: false,
-        error: '分类ID不能为空'
+        error: '分类ID必须是有效数字'
       });
     }
-    
-    const categories = coupletDB.getCategories();
-    const category = categories.find(cat => cat.id === id);
-    
+    // 获取分类信息
+    const categories = await coupletDB.getCategories();
+    const category = categories.find(cat => cat.id === parseInt(id));
     if (!category) {
       return res.status(404).json({
         success: false,
         error: '分类不存在'
       });
     }
-    
     // 获取该分类下的对联
-    const coupletsResult = coupletDB.getAllCouplets({
-      category: category.name,
-      page: 1,
-      limit: 20
+    const coupletsResult = await coupletDB.getAllCouplets({
+      page,
+      limit,
+      category: id
     });
-    
     res.status(200).json({
       success: true,
       data: {
-        category: category,
+        category,
         couplets: coupletsResult.data,
         pagination: coupletsResult.pagination
       }
     });
   } catch (error) {
-    console.error('获取分类详情错误:', error);
+    console.error('获取分类详情失败:', error);
     res.status(500).json({
       success: false,
-      error: '服务器内部错误'
+      error: '服务器内部错误',
+      message: error.message
     });
   }
 };
 
-// 获取分类统计
-exports.getCategoryStats = (req, res) => {
+// 3. 获取分类统计
+exports.getCategoryStats = async (req, res) => {
   try {
-    const categories = coupletDB.getCategories();
-    
-    // 计算总对联数
-    const totalCouplets = categories.reduce((sum, cat) => sum + cat.count, 0);
-    
-    // 按数量排序
-    const sortedCategories = [...categories].sort((a, b) => b.count - a.count);
-    
-    // 最受欢迎的分类（前5个）
-    const popularCategories = sortedCategories.slice(0, 5);
-    
+    const categories = await coupletDB.getCategories();
+    const totalCategories = categories.length;
+    const totalCouplets = categories.reduce((sum, cat) => sum + (cat.count || 0), 0);
+    const avgCoupletsPerCategory = totalCategories > 0 ? (totalCouplets / totalCategories).toFixed(1) : 0;
+    // 热门分类（前5）
+    const hotCategories = [...categories]
+      .sort((a, b) => (b.count || 0) - (a.count || 0))
+      .slice(0, 5);
     res.status(200).json({
       success: true,
       data: {
-        total_categories: categories.length,
-        total_couplets: totalCouplets,
-        average_couplets_per_category: Math.round(totalCouplets / categories.length),
-        popular_categories: popularCategories,
-        distribution: categories.map(cat => ({
+        totalCategories,
+        totalCouplets,
+        avgCoupletsPerCategory,
+        hotCategories,
+        categories: categories.map(cat => ({
+          id: cat.id,
           name: cat.name,
-          count: cat.count,
-          percentage: Math.round((cat.count / totalCouplets) * 100)
+          count: cat.count || 0,
+          percentage: totalCouplets > 0 ? ((cat.count || 0) / totalCouplets * 100).toFixed(1) + '%' : '0%'
         }))
       }
     });
   } catch (error) {
-    console.error('获取分类统计错误:', error);
+    console.error('获取分类统计失败:', error);
     res.status(500).json({
       success: false,
-      error: '服务器内部错误'
+      error: '服务器内部错误',
+      message: error.message
     });
   }
 };
 
-// 获取分类对联数量分布
-exports.getCategoryDistribution = (req, res) => {
+// 4. 获取分类分布（带颜色）
+exports.getCategoryDistribution = async (req, res) => {
   try {
-    const categories = coupletDB.getCategories();
-    const totalCouplets = categories.reduce((sum, cat) => sum + cat.count, 0);
-    
+    const categories = await coupletDB.getCategories();
+    // 随机生成颜色（用于前端展示）
+    const getRandomColor = () => {
+      const letters = '0123456789ABCDEF';
+      let color = '#';
+      for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+      }
+      return color;
+    };
     const distribution = categories.map(cat => ({
       id: cat.id,
       name: cat.name,
-      count: cat.count,
-      percentage: Math.round((cat.count / totalCouplets) * 100),
-      color: this.getCategoryColor(cat.id)
+      count: cat.count || 0,
+      color: getRandomColor(),
+      percentage: categories.reduce((sum, c) => sum + (c.count || 0), 0) > 0 
+        ? ((cat.count || 0) / categories.reduce((sum, c) => sum + (c.count || 0), 0) * 100).toFixed(1) + '%' 
+        : '0%'
     }));
-    
     res.status(200).json({
       success: true,
       data: distribution
     });
   } catch (error) {
-    console.error('获取分类分布错误:', error);
+    console.error('获取分类分布失败:', error);
     res.status(500).json({
       success: false,
-      error: '服务器内部错误'
+      error: '服务器内部错误',
+      message: error.message
     });
   }
-};
-
-// 辅助函数：根据分类ID生成颜色
-exports.getCategoryColor = (categoryId) => {
-  const colors = [
-    '#FF6B6B', '#4ECDC4', '#FFD166', '#06D6A0', '#118AB2',
-    '#EF476F', '#7B68EE', '#20B2AA', '#FFA500', '#9B59B6'
-  ];
-  
-  // 使用简单的哈希函数生成颜色索引
-  let hash = 0;
-  for (let i = 0; i < categoryId.length; i++) {
-    hash = categoryId.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  
-  const index = Math.abs(hash) % colors.length;
-  return colors[index];
 };

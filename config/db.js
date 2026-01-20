@@ -1,120 +1,72 @@
-// config/db.js - 优化版
+// config/db.js
 const mongoose = require('mongoose');
 
-// 全局缓存连接，避免每次函数调用都创建新连接
-let cachedConnection = null;
-
-// 防止开发环境下的热重载重复连接
-if (process.env.NODE_ENV === 'development') {
-  if (mongoose.connection.readyState === 1) {
-    cachedConnection = mongoose.connection;
-  }
-}
-
-async function connectDB() {
-  // 如果已有缓存连接且状态正常，直接复用
-  if (cachedConnection && mongoose.connection.readyState === 1) {
-    console.log('✅ 使用缓存的MongoDB连接');
-    return cachedConnection;
+class Database {
+  constructor() {
+    this.isConnected = false;
   }
 
-  try {
-    const mongoUri = process.env.MONGODB_URI;
-    
+  // 🔴 恢复默认参数，同时校验是否为远程地址
+  async connect(mongoUri = process.env.MONGODB_URI) {
+    // 1. 校验环境变量是否配置
     if (!mongoUri) {
-      throw new Error('MONGODB_URI环境变量未设置');
+      throw new Error('❌ MONGODB_URI 环境变量未配置！');
     }
 
-    // Serverless环境优化配置
-    const options = {
-      maxPoolSize: 10,           // 连接池最大连接数
-      minPoolSize: 2,            // 连接池最小连接数
-      socketTimeoutMS: 45000,    // Socket超时时间
-      serverSelectionTimeoutMS: 5000, // 服务器选择超时
-      heartbeatFrequencyMS: 10000, // 心跳检测频率
-    };
-
-    console.log('🔄 创建新的MongoDB连接...');
-    
-    // 建立连接
-    const connection = await mongoose.connect(mongoUri, options);
-    
-    // 监听连接事件
-    mongoose.connection.on('error', (err) => {
-      console.error('❌ MongoDB连接错误:', err.message);
-    });
-
-    mongoose.connection.on('disconnected', () => {
-      console.log('⚠️ MongoDB连接断开');
-      cachedConnection = null;
-    });
-
-    mongoose.connection.on('reconnected', () => {
-      console.log('🔁 MongoDB重新连接成功');
-    });
-
-    // 缓存连接
-    cachedConnection = connection;
-    console.log(`✅ MongoDB连接成功: ${mongoose.connection.host}`);
-    
-    return connection;
-  } catch (error) {
-    console.error('❌ MongoDB连接失败:', error.message);
-    
-    // 针对常见错误的友好提示
-    if (error.name === 'MongoServerSelectionError') {
-      console.error('💡 请检查:');
-      console.error('1. MongoDB Atlas IP白名单是否正确');
-      console.error('2. 数据库用户名密码是否正确');
-      console.error('3. 网络连接是否正常');
+    // 2. 禁止连接本地数据库
+    if (mongoUri.includes('localhost') || mongoUri.includes('127.0.0.1')) {
+      throw new Error('❌ 禁止连接本地 MongoDB！请配置远程 MONGODB_URI');
     }
-    
-    throw error;
+
+    try {
+      // Mongoose 6+ 无需额外参数
+      await mongoose.connect(mongoUri);
+      
+      this.isConnected = true;
+      console.log('✅ 远程 MongoDB 连接成功！');
+      
+      // 监听连接事件
+      mongoose.connection.on('error', (err) => {
+        console.error('❌ MongoDB 连接异常:', err.message);
+        this.isConnected = false;
+      });
+      
+      mongoose.connection.on('disconnected', () => {
+        console.log('⚠️ MongoDB 连接断开');
+        this.isConnected = false;
+      });
+      
+    } catch (error) {
+      console.error('❌ MongoDB 连接失败:', error.message);
+      this.isConnected = false;
+      throw error; // 抛出错误，让上层处理
+    }
   }
-}
 
-// 获取连接状态的函数
-function getConnectionStatus() {
-  const states = ['disconnected', 'connected', 'connecting', 'disconnecting'];
-  return {
-    isConnected: mongoose.connection.readyState === 1,
-    readyState: mongoose.connection.readyState,
-    stateName: states[mongoose.connection.readyState] || 'unknown',
-    host: mongoose.connection.host || 'unknown',
-    dbName: mongoose.connection.name || 'unknown',
-    models: Object.keys(mongoose.models || {}),
-  };
-}
-
-// 健康检查函数
-async function healthCheck() {
-  try {
-    if (mongoose.connection.readyState !== 1) {
-      await connectDB();
+  async disconnect() {
+    try {
+      await mongoose.disconnect();
+      this.isConnected = false;
+      console.log('✅ MongoDB 已断开连接');
+    } catch (error) {
+      console.error('❌ 断开 MongoDB 失败:', error.message);
     }
-    
-    // 执行一个简单查询确认连接可用
-    await mongoose.connection.db.admin().ping();
-    return { 
-      status: 'healthy', 
-      timestamp: new Date().toISOString(),
-      ...getConnectionStatus()
-    };
-  } catch (error) {
-    return { 
-      status: 'unhealthy', 
-      error: error.message,
-      timestamp: new Date().toISOString(),
-      ...getConnectionStatus()
+  }
+
+  getConnection() {
+    return mongoose.connection;
+  }
+
+  getStatus() {
+    return {
+      isConnected: this.isConnected,
+      readyState: mongoose.connection.readyState, // 0=断开,1=连接,2=连接中,3=断开中
+      host: mongoose.connection.host || 'unknown',
+      name: mongoose.connection.name || 'couplets'
     };
   }
 }
 
-// Serverless环境专用：优化冷启动
-module.exports = {
-  connectDB,
-  getConnectionStatus,
-  healthCheck,
-  // 导出mongoose实例供直接使用
-  mongoose
-};
+// 导出单例实例
+const database = new Database();
+module.exports = database;

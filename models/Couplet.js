@@ -1,150 +1,81 @@
-// models/Couplet.js - 修改为内置数据版本
+// models/Couplet.js - 适配数据库实际字段
 class Couplet {
   constructor(id, data) {
+    // 对应数据库字段：id、category_id、first_line、second_line、horizontal等
     this.id = id;
-    this.title = data.title || '';
-    this.upper_line = data.upper_line || '';
-    this.lower_line = data.lower_line || '';
-    this.category = data.category || '';
-    this.description = data.description || '';
+    this.category_id = data.category_id || 1; // 数据库有category_id字段
+    this.first_line = data.first_line || '';  // 数据库是first_line（对应原upper_line）
+    this.second_line = data.second_line || '';// 数据库是second_line（对应原lower_line）
+    this.horizontal = data.horizontal || '';  // 数据库是horizontal（对应原title）
     this.author = data.author || '';
-    this.origin = data.origin || '';
-    this.meaning = data.meaning || '';
-    this.usage = data.usage || '';
+    this.dynasty = data.dynasty || '';        // 新增数据库的dynasty字段
+    this.description = data.description || '';
+    this.popularity = data.popularity || 0;    // 新增数据库的popularity字段
+    this.favorite_count = data.favorite_count || 0; // 数据库是favorite_count（对应原favorites）
     this.tags = data.tags || [];
     this.recommended = data.recommended || false;
     this.created_at = data.created_at || new Date().toISOString().split('T')[0];
-    this.views = data.views || 0;
-    this.favorites = data.favorites || 0;
   }
 
+  // 输出和数据库一致的字段格式
   toJSON() {
     return {
       id: this.id,
-      title: this.title,
-      upper_line: this.upper_line,
-      lower_line: this.lower_line,
-      category: this.category,
-      description: this.description,
+      category_id: this.category_id,
+      first_line: this.first_line,
+      second_line: this.second_line,
+      horizontal: this.horizontal,
       author: this.author,
-      origin: this.origin,
-      meaning: this.meaning,
-      usage: this.usage,
+      dynasty: this.dynasty,
+      description: this.description,
+      popularity: this.popularity,
+      favorite_count: this.favorite_count,
       tags: this.tags,
       recommended: this.recommended,
-      created_at: this.created_at,
-      views: this.views,
-      favorites: this.favorites
+      created_at: this.created_at
     };
   }
 
-  incrementViews() {
-    this.views += 1;
-    return this;
-  }
-
+  // 适配数据库的favorite_count字段
   incrementFavorites() {
-    this.favorites += 1;
+    this.favorite_count += 1;
     return this;
   }
 
   decrementFavorites() {
-    this.favorites = Math.max(0, this.favorites - 1);
+    this.favorite_count = Math.max(0, this.favorite_count - 1);
     return this;
   }
 }
 
-// 模拟数据库 - 使用内置数据
+// 模拟数据库 - 若后续连接MongoDB，这里可替换为Mongoose模型逻辑
 class CoupletDatabase {
   constructor() {
     this.couplets = new Map();
-    this.initializeBuiltInData(); // 改为内置数据
+    this.initializeBuiltInData(); // 初始化数据（后续可改为从MongoDB读取）
   }
 
-  // 初始化内置数据（不再依赖JSON文件）
+  // 初始化内置数据（和数据库字段一致）
   initializeBuiltInData() {
+    console.log("🔴 开始初始化内置数据..."); // 新增日志
     const builtInData = {
       couplets: [
         {
           id: 1,
-          title: '新春祝福对联',
-          upper_line: '福如东海长流水',
-          lower_line: '寿比南山不老松',
-          category: '春节',
-          description: '传统新春祝福对联',
-          author: '佚名',
-          origin: '中国传统',
-          meaning: '祝福长寿富贵',
-          usage: '春节门联',
-          tags: ['春节', '祝福', '长寿'],
+          category_id: 1,
+          first_line: "天增岁月人增寿",
+          second_line: "春满乾坤福满门",
+          horizontal: "四季平安",
+          author: "民间传统",
+          dynasty: "明代",
+          description: "经典春节祝福对联，上联以“天增岁月”呼应时光流转，下联以“春满乾坤”烘托新春气象...",
+          popularity: 98,
+          favorite_count: 1250,
+          tags: ["春节", "祝福", "传统"],
           recommended: true,
-          views: 150,
-          favorites: 45
+          created_at: "2026-01-01"
         },
-        {
-          id: 2,
-          title: '生意兴隆对联',
-          upper_line: '生意兴隆通四海',
-          lower_line: '财源茂盛达三江',
-          category: '商业',
-          description: '商业祝福对联',
-          author: '佚名',
-          origin: '商业传统',
-          meaning: '祝愿生意兴旺',
-          usage: '商铺开业',
-          tags: ['商业', '财运', '生意'],
-          recommended: true,
-          views: 120,
-          favorites: 38
-        },
-        {
-          id: 3,
-          title: '家庭和睦对联',
-          upper_line: '家和万事兴',
-          lower_line: '人勤百业旺',
-          category: '家庭',
-          description: '家庭和睦对联',
-          author: '佚名',
-          origin: '民间谚语',
-          meaning: '家庭和睦的重要性',
-          usage: '家庭门联',
-          tags: ['家庭', '和睦', '勤劳'],
-          recommended: true,
-          views: 95,
-          favorites: 32
-        },
-        {
-          id: 4,
-          title: '学业有成对联',
-          upper_line: '书山有路勤为径',
-          lower_line: '学海无涯苦作舟',
-          category: '教育',
-          description: '劝学对联',
-          author: '韩愈',
-          origin: '唐代文学',
-          meaning: '学习需要勤奋',
-          usage: '书房对联',
-          tags: ['学习', '教育', '勤奋'],
-          recommended: true,
-          views: 110,
-          favorites: 40
-        },
-        {
-          id: 5,
-          title: '健康长寿对联',
-          upper_line: '健康如意春',
-          lower_line: '平安吉祥年',
-          category: '健康',
-          description: '健康祝福对联',
-          author: '佚名',
-          origin: '民间祝福',
-          meaning: '祝愿健康平安',
-          usage: '健康祝福',
-          tags: ['健康', '平安', '祝福'],
-          recommended: false,
-          views: 80,
-          favorites: 25
-        }
+        // 可继续添加其他数据（字段和数据库一致）
       ]
     };
 
@@ -156,7 +87,7 @@ class CoupletDatabase {
     console.log(`✅ 使用内置数据，初始化了 ${this.couplets.size} 条对联`);
   }
 
-  // 获取所有对联
+  // 获取所有对联（逻辑不变，仅字段适配）
   getAllCouplets(options = {}) {
     let results = Array.from(this.couplets.values());
     
@@ -165,7 +96,7 @@ class CoupletDatabase {
     }
     
     if (options.category) {
-      results = results.filter(c => c.category === options.category);
+      results = results.filter(c => c.category_id === parseInt(options.category));
     }
     
     const page = options.page || 1;
@@ -186,17 +117,13 @@ class CoupletDatabase {
     };
   }
 
-  // 获取单个对联
+  // 获取单个对联（逻辑不变，字段适配）
   getCoupletById(id) {
     const couplet = this.couplets.get(parseInt(id));
-    if (couplet) {
-      couplet.incrementViews();
-      return couplet.toJSON();
-    }
-    return null;
+    return couplet ? couplet.toJSON() : null;
   }
 
-  // 搜索对联
+  // 搜索对联（适配新字段）
   searchCouplets(query, options = {}) {
     let results = Array.from(this.couplets.values());
     
@@ -204,12 +131,11 @@ class CoupletDatabase {
       const searchTerm = query.toLowerCase();
       results = results.filter(couplet => {
         return (
-          couplet.title.toLowerCase().includes(searchTerm) ||
-          couplet.upper_line.toLowerCase().includes(searchTerm) ||
-          couplet.lower_line.toLowerCase().includes(searchTerm) ||
+          couplet.first_line.toLowerCase().includes(searchTerm) ||
+          couplet.second_line.toLowerCase().includes(searchTerm) ||
+          couplet.horizontal.toLowerCase().includes(searchTerm) ||
           couplet.description.toLowerCase().includes(searchTerm) ||
-          couplet.tags.some(tag => tag.toLowerCase().includes(searchTerm)) ||
-          couplet.category.toLowerCase().includes(searchTerm)
+          couplet.tags.some(tag => tag.toLowerCase().includes(searchTerm))
         );
       });
     }
@@ -232,45 +158,49 @@ class CoupletDatabase {
     };
   }
 
-  // 获取分类列表
+  // 获取分类列表（适配category_id）
   getCategories() {
     const categories = new Map();
     
     this.couplets.forEach(couplet => {
-      const category = couplet.category;
-      if (!categories.has(category)) {
-        categories.set(category, {
-          name: category,
+      const categoryId = couplet.category_id;
+      const categoryName = this.getCategoryName(categoryId); // 可根据category_id映射名称
+      if (!categories.has(categoryId)) {
+        categories.set(categoryId, {
+          id: categoryId,
+          name: categoryName,
           count: 0
         });
       }
-      categories.get(category).count += 1;
+      categories.get(categoryId).count += 1;
     });
     
-    return Array.from(categories.values()).map(cat => ({
-      id: cat.name.toLowerCase().replace(/\s+/g, '-'),
-      name: cat.name,
-      count: cat.count
-    }));
+    return Array.from(categories.values());
   }
 
-  // 获取随机对联
+  // 辅助方法：根据category_id获取分类名称
+  getCategoryName(categoryId) {
+    const categoryMap = {
+      1: "春节",
+      2: "商业",
+      3: "家庭"
+    };
+    return categoryMap[categoryId] || `分类${categoryId}`;
+  }
+
+  // 获取随机对联（逻辑不变）
   getRandomCouplets(limit = 3) {
     const allCouplets = Array.from(this.couplets.values());
     const shuffled = allCouplets.sort(() => 0.5 - Math.random());
     return shuffled.slice(0, limit).map(c => c.toJSON());
   }
 
-  // 更新收藏数
+  // 更新收藏数（适配favorite_count）
   updateFavoriteCount(id, increment = true) {
     const couplet = this.couplets.get(parseInt(id));
     if (couplet) {
-      if (increment) {
-        couplet.incrementFavorites();
-      } else {
-        couplet.decrementFavorites();
-      }
-      return couplet.favorites;
+      increment ? couplet.incrementFavorites() : couplet.decrementFavorites();
+      return couplet.favorite_count;
     }
     return null;
   }
