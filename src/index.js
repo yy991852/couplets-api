@@ -28,6 +28,9 @@ const searchRouter = require('../api/search');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// 设置信任代理（Vercel需要）
+app.set('trust proxy', 1);
+
 // 安全中间件
 app.use(helmet({
   contentSecurityPolicy: false
